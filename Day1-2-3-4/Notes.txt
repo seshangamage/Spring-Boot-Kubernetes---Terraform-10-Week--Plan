@@ -48,3 +48,5 @@ Check Deployemnt Status
 			springboot-app-6dbfd88fd9-7dr4l   1/1     Running   0          3m43s
 			springboot-app-6dbfd88fd9-87lnn   1/1     Running   0          3m41s
 
+After this acces the app with http://127.0.0.1/ 
+
