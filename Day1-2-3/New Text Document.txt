@@ -1,0 +1,16 @@
+Verify Cluster
+	kubectl cluster-info
+	kubectl get nodes
+	kubectl get pods -A
+
+Deploy Your First Pod (nginx)
+	kubectl create deployment nginx --image=nginx
+	kubectl get deployments
+	kubectl get pods
+
+Expose the Deployment (Service)
+	kubectl expose deployment nginx --type=NodePort --port=80
+	minikube service nginx --url
+
+View Kubernetes Dashboard
+	minikube dashboard
