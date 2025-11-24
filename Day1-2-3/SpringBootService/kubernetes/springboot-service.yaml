@@ -4,7 +4,7 @@ metadata:
   name: springboot-service
 spec:
   selector:
-    app: springboot-microservice
+    app: springboot-app
   ports:
     - protocol: TCP
       port: 80

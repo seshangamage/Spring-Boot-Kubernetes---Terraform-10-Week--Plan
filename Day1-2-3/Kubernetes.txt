@@ -1,4 +1,4 @@
-Below note explains how the deployemnt file works
+Below note explains how the deployemnt spingboot-deployment.yaml file works
 
 apiVersion: apps/v1
 
@@ -66,3 +66,4 @@ Here, the Deployment is named springboot-app.
             Exposes port 8080 inside the container
             (Spring Boot default port)
             This does NOT expose it outside the cluster — for that you need a Service.We will be using the springboot-service.yaml file
+
