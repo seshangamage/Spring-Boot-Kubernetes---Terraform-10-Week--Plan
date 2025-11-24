@@ -14,3 +14,10 @@ Expose the Deployment (Service)
 
 View Kubernetes Dashboard
 	minikube dashboard
+
+
+Building the docker image from the Springboot code
+	docker build -t springboot-microservice:1.0 .
+
+Run the Container Locally - Local url to test http://localhost:8080
+	docker run -p 8080:8080 springboot-microservice:1.0
