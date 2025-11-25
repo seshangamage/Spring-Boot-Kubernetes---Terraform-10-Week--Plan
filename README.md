@@ -20,11 +20,11 @@ This is a structured 10-week hands-on learning plan to master **Spring Boot, Kub
 ## Week 2: Kubernetes Advanced & Observability
 - **Day 8:** Health checks (liveness/readiness), probes.
 - **Day 9:** Resource requests/limits, QoS, scheduling basics.
-- **Day 10:** Ingress controllers (NGINX). Setup ingress and TLS (cert-manager optional).
+- **Day 10:** Gateway API fundamentals (GatewayClass, Gateway, HTTPRoute). Install Traefik/Contour and expose Spring Boot service via Gateway API. TLS setup with cert-manager (optional).
 - **Day 11:** Horizontal Pod Autoscaler (HPA) and metrics-server.
 - **Day 12:** Prometheus + Grafana, instrument Spring Boot with Micrometer.
 - **Day 13:** Distributed tracing basics: OpenTelemetry + Jaeger.
-- **Day 14:** Review + Dashboard + Alerts basic.
+- **Day 14:** Review + Observability dashboard + Basic alerts (Prometheus/Grafana).
 
 ## Week 3: Microservices Deployment Patterns
 - **Day 15:** Define microservices boundaries for a sample app (orders, users, inventory, gateway).
