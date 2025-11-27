@@ -4,6 +4,7 @@
 - Minikube installed
 - Docker installed
 - kubectl installed
+- Docker should be running in the Machine - In our case its docker desktop App
 
 ## Verify Cluster
 ```powershell
