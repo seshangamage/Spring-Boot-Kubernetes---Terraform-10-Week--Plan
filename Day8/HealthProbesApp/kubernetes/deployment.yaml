@@ -1,0 +1,64 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: health-probes-app
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: health-probes
+  template:
+    metadata:
+      labels:
+        app: health-probes
+    spec:
+      containers:
+        - name: health-probes
+          image: health-probes:1.0
+          imagePullPolicy: Never
+          ports:
+            - containerPort: 8080
+          
+          # Liveness Probe - Checks if application is running
+          # If this fails, Kubernetes will RESTART the pod
+          livenessProbe:
+            httpGet:
+              path: /actuator/health/liveness
+              port: 8080
+            initialDelaySeconds: 30    # Wait 30s after container starts
+            periodSeconds: 10           # Check every 10 seconds
+            timeoutSeconds: 5           # Timeout after 5 seconds
+            failureThreshold: 3         # Restart after 3 consecutive failures
+            successThreshold: 1         # Consider alive after 1 success
+          
+          # Readiness Probe - Checks if application can serve traffic
+          # If this fails, Kubernetes will STOP sending traffic (removes from service)
+          readinessProbe:
+            httpGet:
+              path: /actuator/health/readiness
+              port: 8080
+            initialDelaySeconds: 10    # Wait 10s after container starts
+            periodSeconds: 5           # Check every 5 seconds
+            timeoutSeconds: 3          # Timeout after 3 seconds
+            failureThreshold: 3        # Mark not ready after 3 consecutive failures
+            successThreshold: 1        # Mark ready after 1 success
+          
+          # Startup Probe - Gives slow-starting apps more time
+          # Disables liveness/readiness until startup succeeds
+          startupProbe:
+            httpGet:
+              path: /actuator/health/liveness
+              port: 8080
+            initialDelaySeconds: 0     # Start checking immediately
+            periodSeconds: 10          # Check every 10 seconds
+            timeoutSeconds: 5          # Timeout after 5 seconds
+            failureThreshold: 30       # Allow up to 300s (30 * 10) for startup
+            successThreshold: 1        # Startup complete after 1 success
+          
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "250m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
