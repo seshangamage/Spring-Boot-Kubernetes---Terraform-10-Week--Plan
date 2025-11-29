@@ -1,0 +1,49 @@
+# QoS Class: Burstable
+# Requests are less than limits (allows bursting)
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: resource-app-burstable
+  labels:
+    qos: burstable
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: resource-app
+      qos: burstable
+  template:
+    metadata:
+      labels:
+        app: resource-app
+        qos: burstable
+    spec:
+      containers:
+        - name: resource-app
+          image: resource-limits:1.0
+          imagePullPolicy: Never
+          ports:
+            - containerPort: 8080
+          
+          # Burstable QoS: requests < limits
+          resources:
+            requests:
+              memory: "128Mi"     # Minimum guaranteed memory
+              cpu: "100m"         # Minimum guaranteed CPU (0.1 cores)
+            limits:
+              memory: "512Mi"     # Can burst up to 512Mi
+              cpu: "500m"         # Can burst up to 0.5 cores
+          
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 10
+            periodSeconds: 5

@@ -1,0 +1,227 @@
+📋 ConfigMap & Secret Explained
+================================
+
+🔹 ConfigMap (configmap.yaml)
+-----------------------------
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: app-config
+data:
+  APP_NAME: "DemoApp"
+  LOG_LEVEL: "INFO"
+
+What is a ConfigMap?
+    • Stores non-sensitive configuration data as key-value pairs
+    • Separates configuration from application code
+    • Can be updated without rebuilding the Docker image
+    • Injected into pods as environment variables or mounted as files
+
+Why use ConfigMap?
+    ✅ Environment-specific settings (dev, staging, prod)
+    ✅ Application settings that change frequently
+    ✅ Non-sensitive data like feature flags, URLs, log levels
+
+🔹 Secret (secret.yaml)
+-----------------------
+apiVersion: v1
+kind: Secret
+metadata:
+  name: app-secret
+type: Opaque
+data:
+  DB_USER: c3ByaW5n          # base64 encoded "spring"
+  DB_PASS: cGFzcw==          # base64 encoded "pass"
+
+What is a Secret?
+    • Stores sensitive data (passwords, tokens, keys)
+    • Data is base64 encoded (NOT encrypted by default)
+    • More secure than hardcoding credentials
+    • Can be encrypted at rest with additional configuration
+
+Why use Secret?
+    ✅ Database credentials
+    ✅ API keys and tokens
+    ✅ SSH keys, certificates
+    ✅ Prevents credentials in source code
+
+How to encode values for Secret:
+    PowerShell:
+        [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes("spring"))
+    
+    Linux/Mac:
+        echo -n "spring" | base64
+
+🔹 Deployment with ConfigMap & Secret (deployment.yaml)
+-------------------------------------------------------
+env:
+  # Environment variables from ConfigMap
+  - name: APP_NAME
+    valueFrom:
+      configMapKeyRef:
+        name: app-config
+        key: APP_NAME
+  
+  - name: LOG_LEVEL
+    valueFrom:
+      configMapKeyRef:
+        name: app-config
+        key: LOG_LEVEL
+  
+  # Environment variables from Secret
+  - name: DB_USER
+    valueFrom:
+      secretKeyRef:
+        name: app-secret
+        key: DB_USER
+  
+  - name: DB_PASS
+    valueFrom:
+      secretKeyRef:
+        name: app-secret
+        key: DB_PASS
+
+How it works:
+    1. ConfigMap and Secret are created first
+    2. Deployment references them using configMapKeyRef and secretKeyRef
+    3. Values are injected as environment variables into the container
+    4. Spring Boot reads them using @Value("${APP_NAME}")
+
+
+📦 PersistentVolumeClaim (PVC) Explained
+=========================================
+
+🔹 PersistentVolumeClaim (pvc.yaml)
+-----------------------------------
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: app-logs-pvc
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+
+What is a PVC?
+    • Request for storage by a pod
+    • Provides durable storage that persists beyond pod lifecycle
+    • Automatically binds to a PersistentVolume (PV)
+
+Access Modes:
+    • ReadWriteOnce (RWO) - Mounted by single node (read-write)
+    • ReadOnlyMany (ROX) - Mounted by multiple nodes (read-only)
+    • ReadWriteMany (RWX) - Mounted by multiple nodes (read-write)
+
+Storage Size:
+    • 1Gi = 1 Gigabyte
+    • Can request any size based on needs
+
+🔹 Volume Mount in Deployment
+------------------------------
+volumeMounts:
+  - name: logs-volume
+    mountPath: /app/logs
+
+volumes:
+  - name: logs-volume
+    persistentVolumeClaim:
+      claimName: app-logs-pvc
+
+How it works:
+    1. PVC requests storage from Kubernetes
+    2. Kubernetes creates a PersistentVolume (auto-provisioned in Minikube)
+    3. Deployment references the PVC in volumes section
+    4. volumeMounts attaches it to the container at /app/logs
+    5. Application can write files to /app/logs
+    6. Data persists even if pod restarts or crashes
+
+Volume Types:
+    • emptyDir - Temporary storage, deleted when pod dies
+    • hostPath - Mounts directory from host node
+    • persistentVolumeClaim - Durable storage (recommended)
+    • configMap/secret - Mount configuration as files
+
+
+🔄 Complete Flow
+================
+
+1. Create ConfigMap & Secret
+   kubectl apply -f configmap.yaml
+   kubectl apply -f secret.yaml
+
+2. Create PVC (storage request)
+   kubectl apply -f pvc.yaml
+   → Kubernetes auto-creates PV and binds it
+
+3. Create Deployment
+   kubectl apply -f deployment.yaml
+   → Pods start with:
+     ✅ Environment variables from ConfigMap
+     ✅ Environment variables from Secret
+     ✅ Volume mounted at /app/logs
+
+4. Create Service
+   kubectl apply -f service.yaml
+   → Exposes the app via LoadBalancer
+
+5. Start Minikube Tunnel
+   minikube tunnel
+   → Assigns external IP to LoadBalancer service
+
+6. Test the Application
+   curl http://localhost/config        → See ConfigMap & Secret values
+   curl http://localhost/write-log     → Write to persistent volume
+   curl http://localhost/read-logs     → Read from persistent volume
+
+
+📊 Verification Commands
+========================
+
+Check ConfigMap:
+    kubectl get configmap
+    kubectl describe configmap app-config
+
+Check Secret:
+    kubectl get secret
+    kubectl describe secret app-secret
+    
+    # Decode secret value
+    kubectl get secret app-secret -o jsonpath='{.data.DB_USER}' | base64 -d
+
+Check PVC:
+    kubectl get pvc
+    kubectl describe pvc app-logs-pvc
+
+Check Pods:
+    kubectl get pods
+    kubectl logs <pod-name>
+    kubectl exec -it <pod-name> -- /bin/sh
+
+Check Environment Variables in Pod:
+    kubectl exec -it <pod-name> -- env | grep -E 'APP_NAME|LOG_LEVEL|DB_USER|DB_PASS'
+
+Check Volume Mount:
+    kubectl exec -it <pod-name> -- ls -la /app/logs
+    kubectl exec -it <pod-name> -- cat /app/logs/app.log
+
+
+🎯 Key Takeaways
+================
+
+ConfigMap:
+    ✅ Non-sensitive configuration
+    ✅ Easy to update without image rebuild
+    ✅ Injected as environment variables or files
+
+Secret:
+    ✅ Sensitive data (base64 encoded)
+    ✅ More secure than hardcoding
+    ✅ Should be encrypted at rest in production
+
+PersistentVolumeClaim:
+    ✅ Durable storage
+    ✅ Data survives pod restarts
+    ✅ Essential for stateful applications
+    ✅ Separates storage lifecycle from pod lifecycle
