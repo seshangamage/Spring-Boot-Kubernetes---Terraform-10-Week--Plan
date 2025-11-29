@@ -1,0 +1,44 @@
+# QoS Class: BestEffort
+# No requests or limits specified
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: resource-app-besteffort
+  labels:
+    qos: besteffort
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: resource-app
+      qos: besteffort
+  template:
+    metadata:
+      labels:
+        app: resource-app
+        qos: besteffort
+    spec:
+      containers:
+        - name: resource-app
+          image: resource-limits:1.0
+          imagePullPolicy: Never
+          ports:
+            - containerPort: 8080
+          
+          # BestEffort QoS: No resources specified
+          # Will be first to be killed under memory pressure
+          # Can use any available resources on the node
+          
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 10
+            periodSeconds: 5
