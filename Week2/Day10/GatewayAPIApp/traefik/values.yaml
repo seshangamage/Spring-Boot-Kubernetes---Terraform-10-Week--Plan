@@ -1,0 +1,143 @@
+# Traefik Helm Values for Gateway API Support
+# Installation: helm install traefik traefik/traefik -n traefik -f values.yaml
+
+# Enable Gateway API support
+experimental:
+  gateway:
+    enabled: true
+
+# Gateway API CRD installation
+gateway:
+  enabled: true
+  # Automatically create GatewayClass
+  autoCreateGatewayClass: true
+  gatewayClass:
+    name: traefik
+
+# Deployment configuration
+deployment:
+  replicas: 2
+  podAnnotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "9100"
+
+# Resource limits
+resources:
+  requests:
+    cpu: "100m"
+    memory: "128Mi"
+  limits:
+    cpu: "300m"
+    memory: "256Mi"
+
+# Service configuration
+service:
+  type: LoadBalancer
+  annotations:
+    # Add cloud provider specific annotations if needed
+  spec:
+    externalTrafficPolicy: Local
+
+# Ports configuration
+ports:
+  # HTTP port
+  web:
+    port: 80
+    exposedPort: 80
+    protocol: TCP
+  
+  # HTTPS port
+  websecure:
+    port: 443
+    exposedPort: 443
+    protocol: TCP
+    tls:
+      enabled: true
+  
+  # Traefik dashboard
+  traefik:
+    port: 9000
+    exposedPort: 9000
+    expose: false
+  
+  # Metrics port
+  metrics:
+    port: 9100
+    exposedPort: 9100
+    protocol: TCP
+
+# Enable dashboard
+ingressRoute:
+  dashboard:
+    enabled: true
+    # Secure the dashboard
+    matchRule: Host(`traefik.local`)
+    entryPoints: ["traefik"]
+
+# Logs configuration
+logs:
+  general:
+    level: INFO
+  access:
+    enabled: true
+    format: json
+
+# Additional arguments
+additionalArguments:
+  - "--api.insecure=true"
+  - "--ping=true"
+  - "--ping.entrypoint=web"
+  - "--metrics.prometheus=true"
+  - "--metrics.prometheus.entrypoint=metrics"
+  - "--entrypoints.web.http.redirections.entrypoint.to=websecure"
+  - "--entrypoints.web.http.redirections.entrypoint.scheme=https"
+  - "--providers.kubernetesgateway.experimentalChannel=true"
+
+# Enable Prometheus metrics
+metrics:
+  prometheus:
+    enabled: true
+    entryPoint: metrics
+
+# Health checks
+readinessProbe:
+  httpGet:
+    path: /ping
+    port: 9000
+  initialDelaySeconds: 10
+  periodSeconds: 10
+
+livenessProbe:
+  httpGet:
+    path: /ping
+    port: 9000
+  initialDelaySeconds: 10
+  periodSeconds: 10
+
+# Security context
+securityContext:
+  capabilities:
+    drop: [ALL]
+  readOnlyRootFilesystem: true
+  runAsNonRoot: true
+  runAsUser: 65532
+  runAsGroup: 65532
+
+# Pod security context
+podSecurityContext:
+  fsGroup: 65532
+
+# Persistence for SSL certificates
+persistence:
+  enabled: true
+  accessMode: ReadWriteOnce
+  size: 128Mi
+  path: /data
+  
+# RBAC configuration
+rbac:
+  enabled: true
+  
+# Service account
+serviceAccount:
+  create: true

@@ -1,0 +1,134 @@
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: app-httproute
+  namespace: gateway-demo
+  labels:
+    app: gateway-api-demo
+spec:
+  parentRefs:
+  - name: app-gateway
+    namespace: gateway-demo
+    sectionName: http
+  - name: app-gateway
+    namespace: gateway-demo
+    sectionName: https
+  hostnames:
+  - "gateway-demo.local"
+  - "api.gateway-demo.local"
+  rules:
+  # Route for /api/info
+  - matches:
+    - path:
+        type: PathPrefix
+        value: /api/info
+      method: GET
+    backendRefs:
+    - name: gateway-api-app-service
+      port: 80
+      weight: 100
+    filters:
+    - type: RequestHeaderModifier
+      requestHeaderModifier:
+        add:
+        - name: X-Route
+          value: info-route
+  
+  # Route for /api/health
+  - matches:
+    - path:
+        type: PathPrefix
+        value: /api/health
+      method: GET
+    backendRefs:
+    - name: gateway-api-app-service
+      port: 80
+      weight: 100
+    filters:
+    - type: RequestHeaderModifier
+      requestHeaderModifier:
+        add:
+        - name: X-Route
+          value: health-route
+  
+  # Route for /api/path with path parameter
+  - matches:
+    - path:
+        type: PathPrefix
+        value: /api/path
+    backendRefs:
+    - name: gateway-api-app-service
+      port: 80
+  
+  # Route for /api/data (POST)
+  - matches:
+    - path:
+        type: Exact
+        value: /api/data
+      method: POST
+    backendRefs:
+    - name: gateway-api-app-service
+      port: 80
+  
+  # Route for /api/headers
+  - matches:
+    - path:
+        type: Exact
+        value: /api/headers
+    backendRefs:
+    - name: gateway-api-app-service
+      port: 80
+  
+  # Route for /api/gateway-info
+  - matches:
+    - path:
+        type: Exact
+        value: /api/gateway-info
+    backendRefs:
+    - name: gateway-api-app-service
+      port: 80
+  
+  # Default route for all /api requests
+  - matches:
+    - path:
+        type: PathPrefix
+        value: /api
+    backendRefs:
+    - name: gateway-api-app-service
+      port: 80
+  
+  # Actuator endpoints
+  - matches:
+    - path:
+        type: PathPrefix
+        value: /actuator
+    backendRefs:
+    - name: gateway-api-app-service
+      port: 80
+---
+# Additional HTTPRoute for redirect example
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: app-httproute-redirect
+  namespace: gateway-demo
+  labels:
+    app: gateway-api-demo
+spec:
+  parentRefs:
+  - name: app-gateway
+    namespace: gateway-demo
+    sectionName: http
+  hostnames:
+  - "gateway-demo.local"
+  rules:
+  # Redirect HTTP to HTTPS
+  - matches:
+    - path:
+        type: PathPrefix
+        value: /secure
+    filters:
+    - type: RequestRedirect
+      requestRedirect:
+        scheme: https
+        statusCode: 301
